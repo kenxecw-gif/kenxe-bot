@@ -7,7 +7,7 @@ app.use(bodyParser.json());
 
 // 🔐 PASTE YOUR VALUES HERE
 const TOKEN = "EAALTvXC5H3gBQzqDsDOCSgN7AMu1UuzLUdLrcFZARER31b1qd8x1gZAj0volQzhx5nBngPFvZBdcVrVrApcSZB1YHU6WIi1PNKHOL1t4ajBi5KElthy6DI1L00mCWdK2yRPK8CFotzJL3N8JSJTXZBKFczjEfv3oZCLJTcbtS4eZAkAZB6j8Fg9pbZBI7bXBMQhQ86SdVUD1HXhYMZCrDDst3ODj6k2PKXpUWM89I2ybfZCJY23fM35gpQtImqvKZBy5jQfVH2Uadatk27SXbZCYLFjBPXSiZA";
-const PHONE_NUMBER_ID = "PASTE_YOUR_PHONE_NUMBER_ID_HERE";
+const PHONE_NUMBER_ID = "932688436604454";
 const VERIFY_TOKEN = "12345";   // Make sure this matches Meta webhook
 
 // Store user sessions
@@ -127,3 +127,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Server running on port " + PORT);
 });
+
