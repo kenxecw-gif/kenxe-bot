@@ -30,12 +30,22 @@ app.post("/webhook", async (req, res) => {
   const body = req.body;
 
   if (body.object) {
-    const message =
-      body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
+    const message = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
 
     if (message) {
       const from = message.from;
-      const text = message.text?.body?.trim();
+      let text = "";
+      let locationLink = "";
+
+      if (message.type === "text") {
+        text = message.text?.body?.trim();
+      }
+
+      if (message.type === "location") {
+        const lat = message.location.latitude;
+        const lng = message.location.longitude;
+        locationLink = `https://www.google.com/maps?q=${lat},${lng}`;
+      }
 
       if (!userSessions[from]) {
         userSessions[from] = { step: "start" };
@@ -43,19 +53,58 @@ app.post("/webhook", async (req, res) => {
 
       let reply = "";
 
-      // STEP 1 – Main Menu
-      if (userSessions[from].step === "start") {
+      // ==============================
+      // GLOBAL CANCEL
+      // ==============================
+      if (text && text.toLowerCase() === "cancel") {
+
+        if (userSessions[from]?.lastBooking) {
+          reply = "❗ Please tell us the reason for cancellation.";
+          userSessions[from].step = "cancel_reason";
+        } else {
+          reply = "You don’t have any active booking.";
+        }
+
+      }
+
+      // ==============================
+      // GLOBAL RESCHEDULE
+      // ==============================
+      else if (text && text.toLowerCase() === "reschedule") {
+
+        if (userSessions[from]?.lastBooking) {
+          reply = "📅 Please send new Date & Time.";
+          userSessions[from].step = "reschedule_time";
+        } else {
+          reply = "You don’t have any active booking.";
+        }
+
+      }
+
+      // ==============================
+      // START MENU (Only on HI)
+      // ==============================
+      else if (
+        userSessions[from].step === "start" &&
+        text &&
+        ["hi", "hello", "start", "menu"].includes(text.toLowerCase())
+      ) {
+
         reply =
           "Welcome to *Kenxe* 🚗✨\n" +
           "\"Your Time, Your Place – Our Care\"\n\n" +
           "1️⃣ One Time Wash\n" +
           "2️⃣ Subscription Plans\n\n" +
           "Reply with number.";
+
         userSessions[from].step = "menu";
       }
 
-      // STEP 2 – Choose Type
+      // ==============================
+      // MENU SELECTION
+      // ==============================
       else if (userSessions[from].step === "menu") {
+
         if (text === "1") {
           reply =
             "Choose Service:\n" +
@@ -64,7 +113,9 @@ app.post("/webhook", async (req, res) => {
             "3️⃣ Diamond – ₹599";
           userSessions[from].type = "One Time";
           userSessions[from].step = "service";
-        } else if (text === "2") {
+        }
+
+        else if (text === "2") {
           reply =
             "Choose Plan:\n" +
             "1️⃣ Silver – ₹1199\n" +
@@ -72,79 +123,120 @@ app.post("/webhook", async (req, res) => {
             "3️⃣ Platinum – ₹3099";
           userSessions[from].type = "Subscription";
           userSessions[from].step = "service";
-        } else {
+        }
+
+        else {
           reply = "Please reply with 1 or 2.";
         }
       }
 
-      // STEP 3 – Ask For Combined Details
+      // ==============================
+      // SERVICE SELECTED
+      // ==============================
       else if (userSessions[from].step === "service") {
+
         userSessions[from].service = text;
 
         reply =
-          "Please send your booking details in this format:\n\n" +
-          "Name:\n" +
-          "Car Name:\n" +
-          "Date & Time:\n" +
-          "Live Location:";
+          "Please send your booking details (Name, Car, Date & Time).";
 
         userSessions[from].step = "details";
       }
 
-      // STEP 4 – Save Text Details (Flexible)
-else if (userSessions[from].step === "details") {
+      // ==============================
+      // SAVE TEXT DETAILS
+      // ==============================
+      else if (userSessions[from].step === "details") {
 
-  if (message.type === "text") {
+        if (message.type === "text") {
 
-    userSessions[from].details = text;
+          userSessions[from].details = text;
 
-    reply = "📍 Please share your Live Location using WhatsApp location feature.";
-    userSessions[from].step = "await_location";
+          reply = "📍 Please share your Live Location using WhatsApp location feature.";
+          userSessions[from].step = "await_location";
 
-  } else {
-    reply = "Please send your booking details first (Name, Car, Date & Time).";
-  }
-}
-
-// STEP 5 – Accept Real WhatsApp Location
-else if (userSessions[from].step === "await_location") {
-
-  if (message.type === "location") {
-
-    const lat = message.location.latitude;
-    const lng = message.location.longitude;
-
-    const mapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
-
-    reply =
-      "✅ *Booking Confirmed!*\n\n" +
-      "🧼 Service: " + userSessions[from].service + "\n\n" +
-      "📋 Details: " + userSessions[from].details + "\n\n" +
-      "📍 Location: " + mapsLink + "\n\n" +
-      "Our Kenxe team will contact you shortly 🚗✨\n" +
-      "\"Your Time, Your Place – Our Care\"";
-
-    userSessions[from] = { step: "start" };
-
-  } else {
-    reply = "📍 Please share your Live Location using WhatsApp location share.";
-  }
-}
-
-      await axios.post(
-        `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`,
-        {
-          messaging_product: "whatsapp",
-          to: from,
-          text: { body: reply },
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${TOKEN}`,
-            "Content-Type": "application/json",
-          },
+        } else {
+          reply = "Please send booking details first.";
         }
-      );
+      }
+
+      // ==============================
+      // ACCEPT LIVE LOCATION
+      // ==============================
+      else if (userSessions[from].step === "await_location") {
+
+        if (message.type === "location") {
+
+          reply =
+            "✅ *Booking Confirmed!*\n\n" +
+            "🧼 Service: " + userSessions[from].service + "\n\n" +
+            "📋 Details: " + userSessions[from].details + "\n\n" +
+            "📍 Location: " + locationLink + "\n\n" +
+            "Type *cancel* to cancel booking\n" +
+            "Type *reschedule* to change date & time\n\n" +
+            "Our Kenxe team will contact you shortly 🚗✨";
+
+          userSessions[from].lastBooking = {
+            service: userSessions[from].service,
+            details: userSessions[from].details,
+            location: locationLink
+          };
+
+          userSessions[from].step = "booked";
+
+        } else {
+          reply = "📍 Please share your Live Location.";
+        }
+      }
+
+      // ==============================
+      // CANCEL REASON
+      // ==============================
+      else if (userSessions[from].step === "cancel_reason") {
+
+        reply =
+          "❌ *Booking Cancelled*\n\n" +
+          "Reason: " + text + "\n\n" +
+          "We hope to serve you again 🚗✨";
+
+        delete userSessions[from].lastBooking;
+        userSessions[from].step = "start";
+      }
+
+      // ==============================
+      // RESCHEDULE
+      // ==============================
+      else if (userSessions[from].step === "reschedule_time") {
+
+        userSessions[from].lastBooking.details +=
+          "\n📅 Updated Date & Time: " + text;
+
+        reply =
+          "✅ *Booking Rescheduled*\n\n" +
+          userSessions[from].lastBooking.details;
+
+        userSessions[from].step = "booked";
+      }
+
+      // ==============================
+      // SEND MESSAGE TO WHATSAPP
+      // ==============================
+      if (reply) {
+        await axios.post(
+          `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`,
+          {
+            messaging_product: "whatsapp",
+            to: from,
+            text: { body: reply }
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${TOKEN}`,
+              "Content-Type": "application/json"
+            }
+          }
+        );
+      }
     }
   }
 
@@ -155,4 +247,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Server running on port " + PORT);
 });
-
