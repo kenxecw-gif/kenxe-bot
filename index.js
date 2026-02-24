@@ -15,16 +15,28 @@ const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
 const SHEET_ID = process.env.SHEET_ID;
 
 // ==============================
-// 🔹 GOOGLE SHEETS SETUP
+// 🔹 GOOGLE SHEETS SAFE SETUP
 // ==============================
-const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
+let sheets = null;
 
-const auth = new google.auth.GoogleAuth({
-  credentials,
-  scopes: ["https://www.googleapis.com/auth/spreadsheets"],
-});
+try {
+  if (process.env.GOOGLE_SERVICE_ACCOUNT) {
+    const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
 
-const sheets = google.sheets({ version: "v4", auth });
+    const auth = new google.auth.GoogleAuth({
+      credentials,
+      scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+    });
+
+    sheets = google.sheets({ version: "v4", auth });
+    console.log("Google Sheets connected ✅");
+  } else {
+    console.log("Google Sheets ENV not found ⚠");
+  }
+} catch (err) {
+  console.log("Google Sheets initialization failed ❌");
+  console.log(err.message);
+}
 
 // ==============================
 let userSessions = {};
@@ -45,12 +57,15 @@ app.get("/webhook", (req, res) => {
 
 // 🔹 MAIN BOT LOGIC
 app.post("/webhook", async (req, res) => {
-  const body = req.body;
+  try {
+    const body = req.body;
 
-  if (body.object) {
-    const message = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
+    if (body.object) {
+      const message =
+        body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
 
-    if (message) {
+      if (!message) return res.sendStatus(200);
+
       const from = message.from;
       let text = "";
       let locationLink = "";
@@ -71,95 +86,118 @@ app.post("/webhook", async (req, res) => {
 
       let reply = "";
 
+      // ======================
       // CANCEL
+      // ======================
       if (text && text.toLowerCase() === "cancel") {
         if (userSessions[from]?.lastBooking) {
-          reply = "❗ Please tell us the reason for cancellation.";
+          reply = "Please tell the reason for cancellation.";
           userSessions[from].step = "cancel_reason";
         } else {
-          reply = "You don’t have any active booking.";
+          reply = "No active booking found.";
         }
       }
 
+      // ======================
       // RESCHEDULE
+      // ======================
       else if (text && text.toLowerCase() === "reschedule") {
         if (userSessions[from]?.lastBooking) {
-          reply = "📅 Please send new Date & Time.";
+          reply = "Send new Date & Time.";
           userSessions[from].step = "reschedule_time";
         } else {
-          reply = "You don’t have any active booking.";
+          reply = "No active booking found.";
         }
       }
 
-      // START MENU
+      // ======================
+      // START
+      // ======================
       else if (
         userSessions[from].step === "start" &&
         text &&
         ["hi", "hello", "start", "menu"].includes(text.toLowerCase())
       ) {
         reply =
-          "Welcome to *Kenxe* 🚗✨\n\n" +
+          "Welcome to Kenxe 🚗\n\n" +
           "1️⃣ One Time Wash\n" +
           "2️⃣ Subscription Plans\n\n" +
           "Reply with number.";
-
         userSessions[from].step = "menu";
       }
 
+      // ======================
       // MENU
+      // ======================
       else if (userSessions[from].step === "menu") {
         if (text === "1") {
-          reply = "Choose Service:\n1️⃣ Stranded – ₹399\n2️⃣ Premium – ₹499\n3️⃣ Diamond – ₹599";
+          reply =
+            "Choose Service:\n" +
+            "1️⃣ Stranded – ₹399\n" +
+            "2️⃣ Premium – ₹499\n" +
+            "3️⃣ Diamond – ₹599";
           userSessions[from].step = "service";
         } else if (text === "2") {
-          reply = "Choose Plan:\n1️⃣ Silver – ₹1199\n2️⃣ Gold – ₹2199\n3️⃣ Platinum – ₹3099";
+          reply =
+            "Choose Plan:\n" +
+            "1️⃣ Silver – ₹1199\n" +
+            "2️⃣ Gold – ₹2199\n" +
+            "3️⃣ Platinum – ₹3099";
           userSessions[from].step = "service";
         } else {
-          reply = "Please reply with 1 or 2.";
+          reply = "Reply with 1 or 2.";
         }
       }
 
-      // SERVICE SELECT
+      // ======================
+      // SERVICE
+      // ======================
       else if (userSessions[from].step === "service") {
         userSessions[from].service = text;
         reply = "Send your details (Name, Car, Date & Time).";
         userSessions[from].step = "details";
       }
 
-      // SAVE DETAILS
+      // ======================
+      // DETAILS
+      // ======================
       else if (userSessions[from].step === "details") {
         userSessions[from].details = text;
-        reply = "📍 Please share Live Location.";
+        reply = "Please share Live Location.";
         userSessions[from].step = "await_location";
       }
 
+      // ======================
       // LOCATION & CONFIRM
+      // ======================
       else if (userSessions[from].step === "await_location") {
         if (message.type === "location") {
 
           reply =
-            "✅ *Booking Confirmed!*\n\n" +
+            "Booking Confirmed ✅\n\n" +
             "Service: " + userSessions[from].service + "\n" +
             "Details: " + userSessions[from].details + "\n" +
             "Location: " + locationLink;
 
           // SAVE TO GOOGLE SHEET
-          await sheets.spreadsheets.values.append({
-            spreadsheetId: SHEET_ID,
-            range: "Sheet1!A:G",
-            valueInputOption: "USER_ENTERED",
-            requestBody: {
-              values: [[
-                Date.now(),
-                from,
-                userSessions[from].service,
-                userSessions[from].details,
-                locationLink,
-                "Confirmed",
-                new Date().toLocaleString()
-              ]]
-            }
-          });
+          if (sheets && SHEET_ID) {
+            await sheets.spreadsheets.values.append({
+              spreadsheetId: SHEET_ID,
+              range: "Sheet1!A:G",
+              valueInputOption: "USER_ENTERED",
+              requestBody: {
+                values: [[
+                  Date.now(),
+                  from,
+                  userSessions[from].service,
+                  userSessions[from].details,
+                  locationLink,
+                  "Confirmed",
+                  new Date().toLocaleString()
+                ]]
+              }
+            });
+          }
 
           userSessions[from].lastBooking = {
             service: userSessions[from].service,
@@ -173,21 +211,27 @@ app.post("/webhook", async (req, res) => {
         }
       }
 
+      // ======================
       // CANCEL REASON
+      // ======================
       else if (userSessions[from].step === "cancel_reason") {
-        reply = "❌ Booking Cancelled.\nReason: " + text;
+        reply = "Booking Cancelled.\nReason: " + text;
         delete userSessions[from].lastBooking;
         userSessions[from].step = "start";
       }
 
-      // RESCHEDULE
+      // ======================
+      // RESCHEDULE TIME
+      // ======================
       else if (userSessions[from].step === "reschedule_time") {
         userSessions[from].lastBooking.details += "\nUpdated: " + text;
-        reply = "✅ Booking Rescheduled.";
+        reply = "Booking Rescheduled ✅";
         userSessions[from].step = "booked";
       }
 
+      // ======================
       // SEND WHATSAPP MESSAGE
+      // ======================
       if (reply) {
         await axios.post(
           `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`,
@@ -205,12 +249,18 @@ app.post("/webhook", async (req, res) => {
         );
       }
     }
-  }
 
-  res.sendStatus(200);
+    res.sendStatus(200);
+
+  } catch (err) {
+    console.log("Webhook Error:", err.message);
+    res.sendStatus(200);
+  }
 });
 
+// ==============================
 // START SERVER
+// ==============================
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Server running on port " + PORT);
