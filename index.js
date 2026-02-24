@@ -5,7 +5,7 @@ const axios = require("axios");
 const app = express();
 app.use(bodyParser.json());
 
-const TOKEN = "PASTE_YOUR_PERMANENT_TOKEN_HERE";
+const TOKEN = "EAALTvXC5H3gBQzqDsDOCSgN7AMu1UuzLUdLrcFZARER31b1qd8x1gZAj0volQzhx5nBngPFvZBdcVrVrApcSZB1YHU6WIi1PNKHOL1t4ajBi5KElthy6DI1L00mCWdK2yRPK8CFotzJL3N8JSJTXZBKFczjEfv3oZCLJTcbtS4eZAkAZB6j8Fg9pbZBI7bXBMQhQ86SdVUD1HXhYMZCrDDst3ODj6k2PKXpUWM89I2ybfZCJY23fM35gpQtImqvKZBy5jQfVH2Uadatk27SXbZCYLFjBPXSiZA";
 const PHONE_NUMBER_ID = "PASTE_YOUR_PHONE_NUMBER_ID_HERE";
 const VERIFY_TOKEN = "kenxe_verify_token";
 
@@ -55,4 +55,5 @@ const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
   console.log("Kenxe Bot is running on port " + PORT);
+
 });
