@@ -66,44 +66,37 @@ app.post("/webhook", async (req, res) => {
         }
       }
 
-     // STEP 3 – Ask Name
+    // STEP 3 – Ask All Details in One Message
 else if (userSessions[from].step === "service") {
   userSessions[from].service = text;
-  reply = "Please enter your Name:";
-  userSessions[from].step = "name";
+
+  reply = `Please send your booking details in this format:
+
+Name:
+Car Name:
+Date & Time:
+Live Location:
+
+Example:
+
+Name: Rocky
+Car Name: Swift
+Date & Time: 25/02/2026 - 10:30 AM
+Live Location: Anna Nagar`;
+
+  userSessions[from].step = "details";
 }
 
-// STEP 4 – Save Name & Ask Car Type
-else if (userSessions[from].step === "name") {
-  userSessions[from].name = text;
-  reply = "Enter your Car Type (Eg: Swift, i20, SUV, Sedan):";
-  userSessions[from].step = "car";
-}
+// STEP 4 – Save Full Details
+else if (userSessions[from].step === "details") {
+  userSessions[from].details = text;
 
-// STEP 5 – Save Car Type & Ask Date & Time
-else if (userSessions[from].step === "car") {
-  userSessions[from].car = text;
-  reply = "Enter Preferred Date & Time (Example: 25/02/2026 - 10:30 AM):";
-  userSessions[from].step = "datetime";
-}
+  reply = `✅ *Booking Received!*
 
-// STEP 6 – Save DateTime & Ask Location
-else if (userSessions[from].step === "datetime") {
-  userSessions[from].datetime = text;
-  reply = "Please share your Live Location or type your Address:";
-  userSessions[from].step = "location";
-}
-
-// STEP 7 – Final Confirmation
-else if (userSessions[from].step === "location") {
-  userSessions[from].location = text;
-
-  reply = `✅ *Booking Confirmed!*\n
-👤 Name: ${userSessions[from].name}
-🚗 Car Type: ${userSessions[from].car}
 🧼 Service: ${userSessions[from].service}
-📅 Date & Time: ${userSessions[from].datetime}
-📍 Location: ${userSessions[from].location}
+
+📋 Details:
+${text}
 
 Our Kenxe team will contact you shortly 🚗✨
 "Your Time, Your Place – Our Care"`;
@@ -134,6 +127,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Server running on port " + PORT);
 });
+
 
 
 
