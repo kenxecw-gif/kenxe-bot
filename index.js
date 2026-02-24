@@ -6,7 +6,7 @@ const app = express();
 app.use(bodyParser.json());
 
 // 🔐 PASTE YOUR VALUES HERE
-const TOKEN = "YOUR_TOKEN_HERE";
+const TOKEN = "EAALTvXC5H3gBQZBPs0KKiXtKHZCeJffXzDlwyfSC25ZCquZCEIQ76FLbN0zYr5lA5M86aFoAR8LIZCEK70p1QbsuqlrFiohq0XVJvWtmvIlzLnHZAoZCgiORSdRvExTmbeDcOEmfZA1J17RGfxSV7SfJoeFazINKk1E6ErCsZBGUN3KCGrglPnHzVJhFtkHjZA1547NAZDZD";
 const PHONE_NUMBER_ID = "932688436604454";
 const VERIFY_TOKEN = "12345";   // Make sure this matches Meta webhook
 
@@ -66,43 +66,50 @@ app.post("/webhook", async (req, res) => {
         }
       }
 
-      // STEP 3 – Save Service
-      else if (userSessions[from].step === "service") {
-        userSessions[from].service = text;
-        reply = "Please enter your Name:";
-        userSessions[from].step = "name";
-      }
+     // STEP 3 – Ask Name
+else if (userSessions[from].step === "service") {
+  userSessions[from].service = text;
+  reply = "Please enter your Name:";
+  userSessions[from].step = "name";
+}
 
-      // STEP 4 – Save Name
-      else if (userSessions[from].step === "name") {
-        userSessions[from].name = text;
-        reply = "Enter your Location:";
-        userSessions[from].step = "location";
-      }
+// STEP 4 – Save Name & Ask Car Type
+else if (userSessions[from].step === "name") {
+  userSessions[from].name = text;
+  reply = "Enter your Car Type (Eg: Swift, i20, SUV, Sedan):";
+  userSessions[from].step = "car";
+}
 
-      // STEP 5 – Save Location
-      else if (userSessions[from].step === "location") {
-        userSessions[from].location = text;
-        reply = "Enter Preferred Date (DD/MM/YYYY):";
-        userSessions[from].step = "date";
-      }
+// STEP 5 – Save Car Type & Ask Date & Time
+else if (userSessions[from].step === "car") {
+  userSessions[from].car = text;
+  reply = "Enter Preferred Date & Time (Example: 25/02/2026 - 10:30 AM):";
+  userSessions[from].step = "datetime";
+}
 
-      // STEP 6 – Save Date
-      else if (userSessions[from].step === "date") {
-        userSessions[from].date = text;
-        reply = "Enter Preferred Time:";
-        userSessions[from].step = "time";
-      }
+// STEP 6 – Save DateTime & Ask Location
+else if (userSessions[from].step === "datetime") {
+  userSessions[from].datetime = text;
+  reply = "Please share your Live Location or type your Address:";
+  userSessions[from].step = "location";
+}
 
-      // STEP 7 – Confirm Booking
-      else if (userSessions[from].step === "time") {
-        userSessions[from].time = text;
+// STEP 7 – Final Confirmation
+else if (userSessions[from].step === "location") {
+  userSessions[from].location = text;
 
-        reply = `✅ *Booking Confirmed!*\n\nName: ${userSessions[from].name}\nType: ${userSessions[from].type}\nService: ${userSessions[from].service}\nLocation: ${userSessions[from].location}\nDate: ${userSessions[from].date}\nTime: ${userSessions[from].time}\n\nOur team will contact you soon 🚗✨`;
+  reply = `✅ *Booking Confirmed!*\n
+👤 Name: ${userSessions[from].name}
+🚗 Car Type: ${userSessions[from].car}
+🧼 Service: ${userSessions[from].service}
+📅 Date & Time: ${userSessions[from].datetime}
+📍 Location: ${userSessions[from].location}
 
-        userSessions[from].step = "done";
-      }
+Our Kenxe team will contact you shortly 🚗✨
+"Your Time, Your Place – Our Care"`;
 
+  userSessions[from].step = "done";
+}
       await axios.post(
         `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`,
         {
@@ -127,6 +134,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Server running on port " + PORT);
 });
+
 
 
 
