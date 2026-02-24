@@ -6,7 +6,7 @@ const app = express();
 app.use(bodyParser.json());
 
 // 🔐 PASTE YOUR VALUES HERE
-const TOKEN = "EAALTvXC5H3gBQ6zB6lBMVdBDZAm1CT6sq6lr3gzKD9OHSSsAf1ZBqOBWJUvLCpm16G8t6dFuXWVZCA07vmoRCh7zoFJRRnK3g7RG9cyvZBkB8T1ZCBBNP9v91TwWNTSQeHG83XbzuZCyyr4VSdcDpl300ShF8IQMJUNIEKwYBnrcv3oGaFgG4GINMmDWEIcmX6KDsBs9EvjiTrZBW6X7AZBY2eILsffT2OtLT62GX24eLp9EoyOhr5fY9OqZCoh49Q3ZAaeY0OzaderzArXKi8tdwGK4Jy";
+const TOKEN = "YOUR_TOKEN_HERE";
 const PHONE_NUMBER_ID = "932688436604454";
 const VERIFY_TOKEN = "12345";   // Make sure this matches Meta webhook
 
@@ -127,5 +127,6 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Server running on port " + PORT);
 });
+
 
 
