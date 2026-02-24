@@ -91,34 +91,45 @@ app.post("/webhook", async (req, res) => {
         userSessions[from].step = "details";
       }
 
-      // STEP 4 – Validate & Confirm
-      else if (userSessions[from].step === "details") {
-        const lowerText = text.toLowerCase();
+      // STEP 4 – Save Text Details (Flexible)
+else if (userSessions[from].step === "details") {
 
-        if (
-          lowerText.includes("name:") &&
-          lowerText.includes("car") &&
-          lowerText.includes("date") &&
-          lowerText.includes("location")
-        ) {
-          reply =
-            "✅ *Booking Confirmed!*\n\n" +
-            "🧼 Service: " + userSessions[from].service + "\n\n" +
-            text +
-            "\n\nOur Kenxe team will contact you shortly 🚗✨\n" +
-            "\"Your Time, Your Place – Our Care\"";
+  if (message.type === "text") {
 
-          // Reset session after confirmation
-          userSessions[from] = { step: "start" };
-        } else {
-          reply =
-            "⚠ Please send complete details correctly:\n\n" +
-            "Name:\n" +
-            "Car Name:\n" +
-            "Date & Time:\n" +
-            "Live Location:";
-        }
-      }
+    userSessions[from].details = text;
+
+    reply = "📍 Please share your Live Location using WhatsApp location feature.";
+    userSessions[from].step = "await_location";
+
+  } else {
+    reply = "Please send your booking details first (Name, Car, Date & Time).";
+  }
+}
+
+// STEP 5 – Accept Real WhatsApp Location
+else if (userSessions[from].step === "await_location") {
+
+  if (message.type === "location") {
+
+    const lat = message.location.latitude;
+    const lng = message.location.longitude;
+
+    const mapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
+
+    reply =
+      "✅ *Booking Confirmed!*\n\n" +
+      "🧼 Service: " + userSessions[from].service + "\n\n" +
+      "📋 Details: " + userSessions[from].details + "\n\n" +
+      "📍 Location: " + mapsLink + "\n\n" +
+      "Our Kenxe team will contact you shortly 🚗✨\n" +
+      "\"Your Time, Your Place – Our Care\"";
+
+    userSessions[from] = { step: "start" };
+
+  } else {
+    reply = "📍 Please share your Live Location using WhatsApp location share.";
+  }
+}
 
       await axios.post(
         `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`,
@@ -144,3 +155,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Server running on port " + PORT);
 });
+
