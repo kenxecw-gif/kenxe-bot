@@ -9,10 +9,10 @@ app.use(bodyParser.json());
 // ==============================
 // 🔐 ENV VARIABLES
 // ==============================
-const TOKEN = process.env.EAALTvXC5H3gBQZBPs0KKiXtKHZCeJffXzDlwyfSC25ZCquZCEIQ76FLbN0zYr5lA5M86aFoAR8LIZCEK70p1QbsuqlrFiohq0XVJvWtmvIlzLnHZAoZCgiORSdRvExTmbeDcOEmfZA1J17RGfxSV7SfJoeFazINKk1E6ErCsZBGUN3KCGrglPnHzVJhFtkHjZA1547NAZDZD;
-const PHONE_NUMBER_ID = process.env.932688436604454;
-const VERIFY_TOKEN = process.env.12345;
-const SHEET_ID = process.env.1b7dIn3J3G60we-Kt84JfqYYPotE_3qUB0F_nUjVRklA;
+const TOKEN = process.env.WHATSAPP_TOKEN;
+const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
+const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
+const SHEET_ID = process.env.SHEET_ID;
 
 // ==============================
 // 🔹 GOOGLE SHEETS SETUP
