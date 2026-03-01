@@ -115,18 +115,18 @@ app.post("/webhook", async (req, res) => {
       // ======================
       // START
       // ======================
-      else if (
-        userSessions[from].step === "start" &&
-        text &&
-        ["hi", "hello", "start", "menu"].includes(text.toLowerCase())
-      ) {
-        reply =
-          "Welcome to Kenxe 🚗\n\n" +
-          "1️⃣ One Time Wash\n" +
-          "2️⃣ Subscription Plans\n\n" +
-          "Reply with number.";
-        userSessions[from].step = "menu";
-      }
+else if (
+  text &&
+  ["hi", "hello", "start", "menu"].includes(text.toLowerCase())
+)
+{
+  userSessions[from].step = "menu";
+  reply =
+    "Welcome to Kenxe 🚗\n\n" +
+    "1️⃣ One Time Wash\n" +
+    "2️⃣ Subscription Plans\n\n" +
+    "Reply with number.";
+}
 
       // ======================
       // MENU
@@ -267,4 +267,5 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Server running on port " + PORT);
 });
+
 
