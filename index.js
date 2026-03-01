@@ -184,19 +184,19 @@ else if (
           // SAVE TO GOOGLE SHEET
           if (sheets && SHEET_ID) {
             await sheets.spreadsheets.values.append({
-              spreadsheetId: SHEET_ID,
-              range: "Sheet1!A:G",
+              range: "Sheet1!A:H",
               valueInputOption: "USER_ENTERED",
               requestBody: {
                 values: [[
-                  Date.now(),
-                  from,
-                  userSessions[from].service,
-                  userSessions[from].details,
-                  locationLink,
-                  "Confirmed",
-                  new Date().toLocaleString()
-                ]]
+                  "KX-" + Date.now(),                // Booking ID
+                  "Customer",                        // Name (you are not collecting name separately)
+                  userSessions[from].service,        // Service
+                  userSessions[from].details,        // Details
+                  locationLink,                      // Location
+                  "Confirmed",                       // Status
+                  from,                              // Phone
+                  new Date().toLocaleString()        // Date Created
+                  ]]
               }
             });
           }
@@ -267,5 +267,6 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Server running on port " + PORT);
 });
+
 
 
