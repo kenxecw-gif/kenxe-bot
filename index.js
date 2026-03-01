@@ -57,6 +57,8 @@ app.get("/webhook", (req, res) => {
 
 // 🔹 MAIN BOT LOGIC
 app.post("/webhook", async (req, res) => {
+  console.log("🔥 Webhook POST received");
+  console.log("Body:", JSON.stringify(req.body));
   try {
     const body = req.body;
 
@@ -265,3 +267,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Server running on port " + PORT);
 });
+
