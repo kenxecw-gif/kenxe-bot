@@ -226,32 +226,44 @@ else if (userSessions[from].step === "await_location") {
       }
 
       // ======================
-      // SEND WHATSAPP MESSAGE
-      // ======================
-      if (reply) {
-        await axios.post(
-          `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`,
-          {
-            messaging_product: "whatsapp",
-            to: from,
-            text: { body: reply }
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${TOKEN}`,
-              "Content-Type": "application/json"
-            }
-          }
-        );
-      }
-    }
+// ======================
+// SEND WHATSAPP MESSAGE
+// ======================
+if (reply) {
+  try {
 
-    res.sendStatus(200);
+    console.log("📤 Sending WhatsApp reply:", reply);
+    console.log("📱 To:", from);
+
+    const response = await axios.post(
+      `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`,
+      {
+        messaging_product: "whatsapp",
+        to: from,
+        type: "text",
+        text: {
+          body: reply
+        }
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${TOKEN}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    console.log("✅ WhatsApp message sent:", response.data);
 
   } catch (err) {
-    console.log("Webhook Error:", err.message);
-    res.sendStatus(200);
+    console.log("❌ WhatsApp Send Error:", err.response?.data || err.message);
   }
+}
+      res.sendStatus(200);
+} catch (err) {
+  console.log("Webhook Error:", err.message);
+  res.sendStatus(200);
+}
 });
 
 // ==============================
@@ -261,6 +273,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Server running on port " + PORT);
 });
+
 
 
 
