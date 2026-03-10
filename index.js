@@ -170,48 +170,43 @@ else if (
       // ======================
       // LOCATION & CONFIRM
       // ======================
-      else if (userSessions[from].step === "await_location") {
-        if (message.type === "location") {
+else if (userSessions[from].step === "await_location") {
 
-          reply =
-            "Booking Confirmed ✅\n\n" +
-            "Service: " + userSessions[from].service + "\n" +
-            "Details: " + userSessions[from].details + "\n" +
-            "Location: " + locationLink;
+  if (message.type === "location") {
 
-          // SAVE TO GOOGLE SHEET
-          if (sheets && SHEET_ID) {
-            await sheets.spreadsheets.values.append({
-              spreadsheetId: SHEET_ID,   // ✅ MUST BE PRESENT
-              range: "Sheet1!A:H",
-              valueInputOption: "USER_ENTERED",
-              requestBody: {
-                values: [[
-                  "KX-" + Date.now(),
-                  "Customer",
-                  userSessions[from].service,
-                  userSessions[from].details,
-                  locationLink,
-                  "Confirmed",
-                  from,
-                  new Date().toLocaleString()
-                ]]
-              }
-            });
-          }
+    reply =
+      "Booking Confirmed ✅\n\n" +
+      "Service: " + userSessions[from].service + "\n" +
+      "Details: " + userSessions[from].details + "\n" +
+      "Location: " + locationLink;
 
-          userSessions[from].lastBooking = {
-            service: userSessions[from].service,
-            details: userSessions[from].details,
-            location: locationLink
-          };
-
-          userSessions[from].step = "booked";
-        } else {
-          reply = "Please share Live Location.";
+    // ✅ SAVE BOOKING TO GOOGLE SHEET
+    if (sheets && SHEET_ID) {
+      await sheets.spreadsheets.values.append({
+        spreadsheetId: SHEET_ID,
+        range: "Sheet1!A:H",
+        valueInputOption: "USER_ENTERED",
+        requestBody: {
+          values: [[
+            "KX-" + Date.now(),
+            "Customer",
+            userSessions[from].service,
+            userSessions[from].details,
+            locationLink,
+            "Confirmed",
+            from,
+            new Date().toLocaleString()
+          ]]
         }
-      }
+      });
+    }
 
+    userSessions[from].step = "booked";
+
+  } else {
+    reply = "Please share Live Location.";
+  }
+}
       // ======================
       // CANCEL REASON
       // ======================
@@ -266,6 +261,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Server running on port " + PORT);
 });
+
 
 
 
