@@ -9,6 +9,7 @@ app.use(bodyParser.json());
 // ==============================
 // 🔐 ENV VARIABLES
 // ==============================
+
 const TOKEN = process.env.WHATSAPP_TOKEN;
 const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
 const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
@@ -17,6 +18,7 @@ const SHEET_ID = process.env.SHEET_ID;
 // ==============================
 // 🔹 GOOGLE SHEETS SETUP
 // ==============================
+
 let sheets = null;
 
 try {
@@ -41,11 +43,13 @@ try {
 // ==============================
 // USER SESSION STORAGE
 // ==============================
+
 let userSessions = {};
 
 // ==============================
 // WEBHOOK VERIFICATION
 // ==============================
+
 app.get("/webhook", (req, res) => {
 
   const mode = req.query["hub.mode"];
@@ -63,18 +67,17 @@ app.get("/webhook", (req, res) => {
 // ==============================
 // MAIN BOT LOGIC
 // ==============================
+
 app.post("/webhook", async (req, res) => {
 
   console.log("🔥 Webhook POST received");
-  console.log(JSON.stringify(req.body));
 
   try {
 
-    const message = req.body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
+    const message =
+      req.body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
 
-    if (!message) {
-      return res.sendStatus(200);
-    }
+    if (!message) return res.sendStatus(200);
 
     const from = message.from;
 
@@ -91,6 +94,7 @@ app.post("/webhook", async (req, res) => {
       const lng = message.location.longitude;
 
       locationLink = `https://www.google.com/maps?q=${lat},${lng}`;
+
     }
 
     if (!userSessions[from]) {
@@ -102,11 +106,14 @@ app.post("/webhook", async (req, res) => {
     // ======================
     // CANCEL
     // ======================
+
     if (text && text.toLowerCase() === "cancel") {
 
       if (userSessions[from]?.lastBooking) {
 
-        reply = "Please tell the reason for cancellation.";
+        reply =
+          "⚠️ Please tell the reason for cancellation.";
+
         userSessions[from].step = "cancel_reason";
 
       } else {
@@ -114,11 +121,13 @@ app.post("/webhook", async (req, res) => {
         reply = "No active booking found.";
 
       }
+
     }
 
     // ======================
     // RESCHEDULE
     // ======================
+
     else if (text && text.toLowerCase() === "reschedule") {
 
       if (userSessions[from]?.lastBooking) {
@@ -131,11 +140,13 @@ app.post("/webhook", async (req, res) => {
         reply = "No active booking found.";
 
       }
+
     }
 
     // ======================
     // START MENU
     // ======================
+
     else if (
       text &&
       ["hi", "hello", "start", "menu"].includes(text.toLowerCase())
@@ -144,25 +155,30 @@ app.post("/webhook", async (req, res) => {
       userSessions[from].step = "menu";
 
       reply =
-        "Welcome to Kenxe 🚗\n\n" +
+        "🚗 *Welcome to Kenxe*\n\n" +
+        "✨ *Your time, your place – our care*\n\n" +
+        "Professional doorstep car wash service.\n\n" +
+        "Please choose a service:\n\n" +
         "1️⃣ One Time Wash\n" +
         "2️⃣ Subscription Plans\n\n" +
-        "Reply with number.";
+        "Reply with the number.";
 
     }
 
     // ======================
     // MENU
     // ======================
+
     else if (userSessions[from].step === "menu") {
 
       if (text === "1") {
 
         reply =
-          "Choose Service:\n" +
-          "1️⃣ Stranded – ₹399\n" +
-          "2️⃣ Premium – ₹499\n" +
-          "3️⃣ Diamond – ₹599";
+          "🧼 *Choose Your Service*\n\n" +
+          "1️⃣ Stranded Wash – ₹399\n" +
+          "2️⃣ Premium Wash – ₹499\n" +
+          "3️⃣ Diamond Wash – ₹599\n\n" +
+          "Reply with service number.";
 
         userSessions[from].step = "service";
 
@@ -171,10 +187,11 @@ app.post("/webhook", async (req, res) => {
       else if (text === "2") {
 
         reply =
-          "Choose Plan:\n" +
+          "📅 *Subscription Plans*\n\n" +
           "1️⃣ Silver – ₹1199\n" +
           "2️⃣ Gold – ₹2199\n" +
-          "3️⃣ Platinum – ₹3099";
+          "3️⃣ Platinum – ₹3099\n\n" +
+          "Reply with plan number.";
 
         userSessions[from].step = "service";
 
@@ -182,7 +199,7 @@ app.post("/webhook", async (req, res) => {
 
       else {
 
-        reply = "Reply with 1 or 2.";
+        reply = "Reply with *1* or *2*.";
 
       }
 
@@ -191,11 +208,20 @@ app.post("/webhook", async (req, res) => {
     // ======================
     // SERVICE
     // ======================
+
     else if (userSessions[from].step === "service") {
 
       userSessions[from].service = text;
 
-      reply = "Send your details (Name, Car, Date & Time).";
+      reply =
+        "📋 *Please send your booking details*\n\n" +
+        "Name:\n" +
+        "Car:\n" +
+        "Date & Time:\n\n" +
+        "Example:\n" +
+        "Name: Sash\n" +
+        "Car: Swift\n" +
+        "Date & Time: 10 Sep, 10 PM";
 
       userSessions[from].step = "details";
 
@@ -204,11 +230,14 @@ app.post("/webhook", async (req, res) => {
     // ======================
     // DETAILS
     // ======================
+
     else if (userSessions[from].step === "details") {
 
       userSessions[from].details = text;
 
-      reply = "Please share Live Location.";
+      reply =
+        "📍 *Almost done!*\n\n" +
+        "Please share your *Live Location* so our team can reach you.";
 
       userSessions[from].step = "await_location";
 
@@ -217,17 +246,21 @@ app.post("/webhook", async (req, res) => {
     // ======================
     // LOCATION CONFIRM
     // ======================
+
     else if (userSessions[from].step === "await_location") {
 
       if (message.type === "location") {
 
         reply =
-          "Booking Confirmed ✅\n\n" +
+          "✅ *Booking Confirmed!*\n\n" +
+          "🚗 *Kenxe Doorstep Car Wash*\n\n" +
           "Service: " + userSessions[from].service + "\n" +
           "Details: " + userSessions[from].details + "\n" +
-          "Location: " + locationLink;
+          "📍 Location: " + locationLink + "\n\n" +
+          "✨ *Your time, your place – our care*";
 
         // SAVE TO GOOGLE SHEETS
+
         if (sheets && SHEET_ID) {
 
           await sheets.spreadsheets.values.append({
@@ -263,49 +296,24 @@ app.post("/webhook", async (req, res) => {
 
       else {
 
-        reply = "Please share Live Location.";
+        reply =
+          "📍 Please send your *Live Location*.";
 
       }
 
     }
 
     // ======================
-    // CANCEL REASON
-    // ======================
-    else if (userSessions[from].step === "cancel_reason") {
-
-      reply = "Booking Cancelled.\nReason: " + text;
-
-      delete userSessions[from].lastBooking;
-
-      userSessions[from].step = "start";
-
-    }
-
-    // ======================
-    // RESCHEDULE
-    // ======================
-    else if (userSessions[from].step === "reschedule_time") {
-
-      userSessions[from].lastBooking.details += "\nUpdated: " + text;
-
-      reply = "Booking Rescheduled ✅";
-
-      userSessions[from].step = "booked";
-
-    }
-
-    // ======================
     // SEND WHATSAPP MESSAGE
     // ======================
+
     if (reply) {
 
       try {
 
         console.log("📤 Sending WhatsApp reply:", reply);
-        console.log("📱 To:", from);
 
-        const response = await axios.post(
+        await axios.post(
           `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`,
           {
             messaging_product: "whatsapp",
@@ -321,11 +329,15 @@ app.post("/webhook", async (req, res) => {
           }
         );
 
-        console.log("✅ WhatsApp message sent:", response.data);
+        console.log("✅ WhatsApp message sent");
 
-      } catch (err) {
+      }
 
-        console.log("❌ WhatsApp Send Error:", err.response?.data || err.message);
+      catch (err) {
+
+        console.log("❌ WhatsApp Send Error:",
+          err.response?.data || err.message
+        );
 
       }
 
@@ -347,6 +359,7 @@ app.post("/webhook", async (req, res) => {
 // ==============================
 // START SERVER
 // ==============================
+
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
